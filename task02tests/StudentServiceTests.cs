@@ -1,4 +1,4 @@
-using NUnit;
+using Xunit;
 using task02;
 namespace task02tests;
 
@@ -7,8 +7,7 @@ public class StudentServiceTests
     private List<Student> _testStudents;
     private StudentService _service;
     
-    [SetUp]
-    public void StudentsServiceTests()
+    public StudentServiceTests()
     {
         _testStudents = new List<Student>
         {
@@ -19,42 +18,42 @@ public class StudentServiceTests
         _service = new StudentService(_testStudents);
     }
 
-    [Test]
+    [Fact]
     public void GetStudentsByFaculty_ReturnsCorrectStudents()
     {
         var result = _service.GetStudentsByFaculty("ФИТ").ToList();
-        Assert.That(result.Count, Is.EqualTo(2));
-        Assert.IsTrue(result.All(s => s.Faculty == "ФИТ"));
+        Assert.Equal(2, result.Count);
+        Assert.True(result.All(s => s.Faculty == "ФИТ"));
     }
 
-    [Test]
+    [Fact]
     public void GetFacultyWithHighestAverageGrade_ReturnsCorrectFaculty()
     {
         var result = _service.GetFacultyWithHighestAverageGrade();
-        Assert.That(result, Is.EqualTo("Экономика"));
+        Assert.Equal("Экономика", result);
     }
 
-    [Test]
+    [Fact]
     public void GetStudentsWithAverageGrade_BiggerThan_MinAverageGrade()
     {
         var result = _service.GetStudentsWithMinAverageGrade(5);
-        Assert.That(result.Count, Is.EqualTo(1));
-        Assert.That(result, Has.Some.Matches<Student>(s => s.Name == "Петр"));
+        Assert.Single(result);
+        Assert.Contains(result, s => s.Name == "Петр");
     }
 
-    [Test]
+    [Fact]
     public void GetStudentsByName()
     {
         var result = _service.GetStudentsOrderedByName();
-        Assert.That(result.Select(s => s.Name), Is.EqualTo(new [] {"Анна", "Иван", "Петр"}));
+        Assert.Equal(new[] { "Анна", "Иван", "Петр" }, result.Select(s => s.Name));
     }
 
-    [Test]
+    [Fact]
     public void GroupStudentsByFaculty()
     {
         var result = _service.GroupStudentsByFaculty();
-        Assert.That(result.Count, Is.EqualTo(2));
-        Assert.That(result["ФИТ"].Count(), Is.EqualTo(2));
-        Assert.That(result["Экономика"].Count(), Is.EqualTo(1));
+        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result["ФИТ"].Count());
+        Assert.Single(result["Экономика"]);
     }
 }
