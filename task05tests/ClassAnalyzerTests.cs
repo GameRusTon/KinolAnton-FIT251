@@ -5,7 +5,10 @@ namespace task05tests;
 public class TestClass
 {
     public int PublicField;
-    private string _privateField = default!;
+    #pragma warning disable CS0414 
+    private string _privateField = default!; //Для этой строки выключил предупреждение о неиспользуемых полях с помощью директивы #pragma
+    #pragma warning restore CS0414 //Включил предупреждение для остального кода.
+
     public int Property { get; set; }
 
     public void Method() { }
