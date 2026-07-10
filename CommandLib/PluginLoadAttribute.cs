@@ -1,0 +1,15 @@
+namespace CommandLib;
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property)]
+public class PluginLoadAttribute: Attribute
+{
+    public string PluginName {get;}
+
+    public string[] Dependencies {get;}
+
+    public PluginLoadAttribute(string pluginName, params string[] dependencies)
+    {
+        PluginName = pluginName;
+        Dependencies = dependencies ?? Array.Empty<string>();;
+    }
+}
