@@ -2,7 +2,7 @@ using CommandLib;
 using FileSystemCommands;
 using AssemblyInspector;
 using Xunit;
-namespace task08tests;
+namespace task09tests;
 
 public class AssemblyInspectorTests
 {
