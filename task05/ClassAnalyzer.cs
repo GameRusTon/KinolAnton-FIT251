@@ -8,7 +8,7 @@ public class ClassAnalyzer
 
     public ClassAnalyzer(Type type)
     {
-        _type = type;
+        _type = type ?? throw new ArgumentNullException(nameof(type), "Тип type не может быть null.");
     }
 
     public IEnumerable<string> GetPublicMethods()
@@ -19,6 +19,9 @@ public class ClassAnalyzer
 
     public IEnumerable<string> GetMethodParams(string methodname)
     {
+        if (methodname == null)
+        throw new ArgumentNullException(nameof(methodname), "Имя метода не может быть null.");
+        
         var method = _type.GetMethod(methodname);
 
         if (method == null)
