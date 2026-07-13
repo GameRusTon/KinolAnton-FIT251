@@ -18,7 +18,7 @@ public class DefiniteIntegralTests
     }
 
     [Fact]
-    public void Solve_WhenFunctionIsNull_ThrowsArgumentException()
+    public void Solve_WhenFunctionIsNull_ThrowsArgumentNullException()
     {
         Func <double, double> X = (double x) => x;
         Assert.Throws<ArgumentNullException>(() => DefiniteIntegral.Solve(-1, 1, null!, 1e-4, 2));
