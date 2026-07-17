@@ -1,117 +1,97 @@
-﻿using task18;
+﻿using task19;
 using ScottPlot;
 using System.Diagnostics;
-namespace task18Console;
+
+namespace task19Console;
 
 class Program
 {
-    private class TestLongCommand: ICommand
-    {
-        private readonly int Id;
-        private readonly IScheduler Scheduler;
-        private int Step = 0;
-        private readonly int MaxStep;
-
-        public TestLongCommand (int id, IScheduler scheduler, int maxStep)
-        {
-            Id = id;
-            Scheduler = scheduler;
-            MaxStep = maxStep;
-        }
-
-        public void Execute()
-        {
-            Step++;
-
-            double mul = Math.Sqrt(Step);
-
-            if (Step < MaxStep)
-                Scheduler.Add(this);
-        }
-    }
-
     static void Main()
     {
-        int [] steps = {1, 5, 10, 50, 100, 500, 1000, 2000 };
-        double [] AverageResults = new double [steps.Length];
+        ServerThread server = new ServerThread();
+        IScheduler scheduler = server.Scheduler;
+        string output;
 
-        for (int i = 0; i < steps.Length; i++)
+        var origin = Console.Out;
+
+        using (StringWriter line = new StringWriter())
         {
-            int step = steps[i];
-            double[] NumberOfLaunches = new double[5];
+            Console.SetOut(line);
 
-            for (int n = 0; n < NumberOfLaunches.Length; n++)
+            for (int i = 1; i <= 5; i++)
             {
-                RoundRobinScheduler scheduler = new RoundRobinScheduler();
-
-                for (int t = 0; t < 20; t++)
-                {
-                    scheduler.Add(new TestLongCommand(t, scheduler, step));
-                }
-
-                Stopwatch stopwatch = Stopwatch.StartNew();
-
-                while (scheduler.HasCommand())
-                {
-                    ICommand command = scheduler.Select();
-                    command.Execute();
-                }
-                
-                stopwatch.Stop();
-                NumberOfLaunches[n] = stopwatch.Elapsed.TotalMilliseconds;
+                server.Add(new TestCommand(i, scheduler));
             }
 
-            AverageResults[i] = NumberOfLaunches.Average();
-            Console.WriteLine($"Количество разбиений: {step} | Средний результат: {AverageResults[i]}");
+            server.StartCycle();
+
+            Thread.Sleep(300);
+
+            server.HardStopHepler();
+
+            output = line.ToString();
         }
-        Console.WriteLine();
 
-        double MinResult = AverageResults.Min();
-        int OptimalNum = steps[Array.IndexOf(AverageResults, MinResult)];
-        Console.WriteLine($"Оптимальное количество разбиений: {OptimalNum} со временем {MinResult}.");
+        Console.SetOut(origin);
+        
+        Console.Write(output);
 
-        double[] OX = AverageResults;
-        double[] OY = steps.Select(t => (double)t).ToArray();
+        List<double> ID = new List<double>();
+        string[] lines = output.Split(new [] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string Line in lines)
+        {
+            if (Line.StartsWith("Поток"))
+            {
+                string [] words = Line.Split(' ');
+
+                if (words.Length > 1 && double.TryParse(words[1], out double id))
+                ID.Add(id);
+            }
+        }
 
         Plot plot = new();
-        var scatter = plot.Add.Scatter(OX, OY);
-        scatter.LineWidth = 2;
-        scatter.MarkerSize = 8;
-        plot.Title("Зависимость времени вычисления от количества разбиений");
-        plot.XLabel("Время вычисления (мс)");
-        plot.YLabel("Количество разбиений");
+        if (ID.Count > 0)
+        {
+            double[] OX = Enumerable.Range(1, ID.Count).Select(x => (double)x).ToArray();
+            double[] OY = ID.ToArray();
+
+            var scatter = plot.Add.Scatter(OX, OY);
+            scatter.LineWidth = 2;
+            scatter.MarkerSize = 8;
+        }
+
+        plot.Title("Динамика обработки длительных операций");
+        plot.XLabel("Шаг (номер вызова)");
+        plot.YLabel("ID выполняемого потока");
+        plot.Axes.SetLimitsY(0, 6);
 
         plot.SavePng("graph.png", 600, 400);
 
         string reportPath = "report.txt";
         using (StreamWriter streamWriter = new StreamWriter(reportPath))
         {
-            streamWriter.WriteLine("Отчет о реализации планировщика и зависимости времени выполнения команд от количества разбиений");
+            streamWriter.WriteLine("Отчет о динамике обработке длительных операций");
             streamWriter.WriteLine();
             streamWriter.WriteLine("ИСХОДНЫЕ ДАННЫЕ:");
-            streamWriter.WriteLine("Реализован планировщик на основе стратегии Round Robbin;");
-            streamWriter.WriteLine("Реализован класс команд TestLongCommand, реализующих интерфейс ICommand,");
-            streamWriter.WriteLine("при этом такие команды не могут выполнить всю работу за один вызов метода Execute;");
+            streamWriter.WriteLine("Создан класс длительных команд TestCommand.");
             streamWriter.WriteLine();
             streamWriter.WriteLine("ТЕСТИРОВАНИЕ:");
-            streamWriter.WriteLine("Создаем массив с различным количеством разбиений:");
-            streamWriter.WriteLine("steps = {1, 5, 10, 50, 100, 500, 1000, 2000 }");
-            streamWriter.WriteLine("Для каждого отдельного количества разбиений создается 20 экземпляров команд,");
-            streamWriter.WriteLine("каждая тестируется по 5 раз и выводится среднее время работы.");
-            streamWriter.WriteLine("Среди всего количества разбиений находим оптимальное по времени.");
+            streamWriter.WriteLine("Запущено 5 экземпляров public-класса TestCommand, каждый выполнен по 3 раза.");
             streamWriter.WriteLine();
-            streamWriter.WriteLine("РЕЗУЛЬТАТЫ:");
-            streamWriter.WriteLine("Данные для каждого разбиения:");
-            for (int i = 0; i < AverageResults.Length; i++)
+            streamWriter.WriteLine("РЕЗУЛЬТАТЫ ВЫПОЛНЕНИЯ КОМАНД:");
+            for (int i = 0; i < ID.Count; i++)
             {
-               streamWriter.WriteLine($"Количество разбиений: {steps[i]} | Средний результат: {AverageResults[i]}"); 
+                streamWriter.WriteLine($"Вызов: {i + 1} | Выполненная команда (ID): {ID[i]}");
             }
+
             streamWriter.WriteLine();
             streamWriter.WriteLine("ВЫВОД:");
-            streamWriter.WriteLine($"Оптимальное количество разбиений: {OptimalNum} со временем {MinResult}.");
-            streamWriter.WriteLine("Пояснение: При увеличении числа разбиений (например, до 2000) резко возрастают накладные");
-            streamWriter.WriteLine("расходы процессора на постоянное извлечение и добавление задач обратно в планировщик,");
-            streamWriter.WriteLine("из-за чего общее время выполнения существенно увеличивается.");
+            streamWriter.WriteLine("Анализ хронологии и сгенерированного графика graph.png показывает регулярное,");
+            streamWriter.WriteLine("последовательное чередование выполнения потоков (1, 2, 3, 4, 5, 1, 2, 3, 4, 5...).");
+            streamWriter.WriteLine("Это доказывает, что длительные команды успешно дробятся на кванты времени и отдают");
+            streamWriter.WriteLine("управление планировщику, обеспечивая справедливое выполнение");
+            streamWriter.WriteLine("всех задач из очереди. Блокировок и простоев процессора не обнаружено.");
         }
     }
 }

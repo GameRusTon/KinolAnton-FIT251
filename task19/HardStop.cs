@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Windows.Input;
-using task18;
 
-namespace task18;
+namespace task19;
 
 public class HardStop: ICommand
 {

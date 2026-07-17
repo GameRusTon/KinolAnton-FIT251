@@ -1,6 +1,6 @@
 using System.Threading;
 using Xunit;
-using task18;
+using task19;
 namespace task18tests;
 
 public class ServerThreadTests
@@ -156,5 +156,35 @@ public class ServerThreadTests
         };
 
         Assert.Equal(ExpectedOrder, log);
+    }
+
+    [Fact]
+    public void TestCommand_ShouldExecuteExactlyThreeTimesAndStop()
+    {
+        ServerThread server = new ServerThread();
+        IScheduler scheduler = server.Scheduler;
+
+        var testCommand = new TestCommand(1, scheduler);
+
+        scheduler.Add(testCommand);
+
+        //Всего должно быть 3 вызова, после чего команда уходит из планировщика.
+
+        //1 вызов
+        ICommand command1 = scheduler.Select();
+        command1.Execute();
+        Assert.True(scheduler.HasCommand());
+
+        //2 вызов
+        ICommand command2 = scheduler.Select();
+        command2.Execute();
+        Assert.True(scheduler.HasCommand());
+
+        //3 вызов
+        ICommand command3 = scheduler.Select();
+        command3.Execute();
+
+        //Ушла из планировщика
+        Assert.False(scheduler.HasCommand());
     }
 }
